@@ -1,0 +1,26 @@
+# ==== .NET / Visual Studio ====
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+*.userprefs
+*.tmp
+
+# ==== Frontend React (CDN-client/) ====
+# La app React vive en este repo pero NO se trackea
+client/
+CDN-client/
+node_modules/
+dist/
+
+# ==== Entorno / secretos ====
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+
+# ==== Logs / temp ====
+*.log
+logs/

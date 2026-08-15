@@ -1,0 +1,110 @@
+-- ============================================================
+-- scripts/consultas.sql
+-- Todas las consultas SQL que ejecuta la API (Dapper), agrupadas
+-- por repositorio y por endpoint. Sirven de referencia para
+-- entender y probar qué hace cada llamada.
+--
+-- Conexión dev:  Server=(localdb)\MSSQLLocalDB ; Database=CDNBackend
+-- En VS podés ejecutarlas desde SQL Server Object Explorer.
+-- ============================================================
+
+USE CDNBackend;
+GO
+
+-- ============================================================
+-- 1) USUARIOS (tabla pública) — API/Data/UsersRepository.cs
+-- ============================================================
+
+-- GET /api/users — listar todos los usuarios (público)
+SELECT Id, Nickname, Username, Role, Description, CreatedAt
+FROM Users
+ORDER BY CreatedAt DESC;
+
+-- GET /api/users/{id} — perfil por id (público)
+SELECT Id, Nickname, Username, Role, Description, CreatedAt
+FROM Users
+WHERE Id = @Id;
+
+-- GET /api/users/{username} — perfil por username (público)
+SELECT Id, Nickname, Username, Role, Description, CreatedAt
+FROM Users
+WHERE Username = @Username;
+
+-- POST /api/auth/register — ¿el username ya está en uso?
+-- (@ExcludeId se usa en PUT /api/users/{id} para ignorar al propio usuario)
+SELECT CASE WHEN EXISTS (
+    SELECT 1 FROM Users
+    WHERE Username = @Username
+      AND (@ExcludeId IS NULL OR Id <> @ExcludeId)
+) THEN 1 ELSE 0 END;
+
+-- POST /api/auth/register — insertar usuario (dentro de una transacción)
+-- Nota: Role no se inserta; toma el DEFAULT 'user' de la columna.
+INSERT INTO Users (Nickname, Username, Description, CreatedAt)
+VALUES (@Nickname, @Username, @Description, @CreatedAt);
+SELECT CAST(SCOPE_IDENTITY() AS INT);   -- devuelve el Id generado
+
+-- PUT /api/users/{id} — editar perfil (dueño o admin)
+UPDATE Users
+SET Nickname = @Nickname,
+    Username = @Username,
+    Description = @Description
+WHERE Id = @Id;
+
+-- GET /api/admin/users — usuarios con email (solo rol admin)
+-- Une la tabla pública con la privada (UserCredentials).
+SELECT u.Id, u.Nickname, u.Username, u.Role, u.CreatedAt, c.Email
+FROM Users u
+JOIN UserCredentials c ON c.UserId = u.Id
+ORDER BY u.CreatedAt DESC;
+
+-- Promover un usuario a admin (no hay endpoint a propósito):
+-- UPDATE Users SET Role = 'admin' WHERE Username = 'tu_usuario';
+
+-- ============================================================
+-- 2) CREDENCIALES (tabla privada) — API/Data/AuthRepository.cs
+-- ============================================================
+
+-- POST /api/auth/login — buscar credencial por email
+SELECT Id, UserId, Email, PasswordHash
+FROM UserCredentials
+WHERE Email = @Email;
+
+-- POST /api/auth/register — ¿el email ya está registrado?
+SELECT CASE WHEN EXISTS (
+    SELECT 1 FROM UserCredentials WHERE Email = @Email
+) THEN 1 ELSE 0 END;
+
+-- POST /api/auth/register — insertar credencial (misma transacción que el usuario)
+INSERT INTO UserCredentials (UserId, Email, PasswordHash)
+VALUES (@UserId, @Email, @PasswordHash);
+SELECT CAST(SCOPE_IDENTITY() AS INT);
+
+-- ============================================================
+-- 3) IMÁGENES (metadatos) — API/Data/ImagesRepository.cs
+-- ============================================================
+
+-- POST /api/images — insertar metadata de la imagen subida
+INSERT INTO Images (UserId, Name, Description, Url, ContentType, SizeBytes, CreatedAt)
+VALUES (@UserId, @Name, @Description, @Url, @ContentType, @SizeBytes, @CreatedAt);
+SELECT CAST(SCOPE_IDENTITY() AS INT);
+
+-- GET /api/images — listar todas las imágenes
+SELECT Id, UserId, Name, Description, Url, ContentType, SizeBytes, CreatedAt
+FROM Images
+ORDER BY CreatedAt DESC;
+
+-- GET /api/images?userId= — listar las imágenes de un usuario
+SELECT Id, UserId, Name, Description, Url, ContentType, SizeBytes, CreatedAt
+FROM Images
+WHERE UserId = @UserId
+ORDER BY CreatedAt DESC;
+
+-- GET /api/images/{id} — metadata de una imagen
+SELECT Id, UserId, Name, Description, Url, ContentType, SizeBytes, CreatedAt
+FROM Images
+WHERE Id = @Id;
+
+-- DELETE /api/images/{id} — borrar (dueño o admin; el archivo se
+-- borra del storage antes de esta consulta)
+DELETE FROM Images WHERE Id = @Id;

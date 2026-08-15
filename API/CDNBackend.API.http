@@ -1,0 +1,83 @@
+@CDNBackend.API_HostAddress = https://localhost:7057
+
+# ------------------------------------------------------------
+# Auth
+# ------------------------------------------------------------
+
+### Registrar usuario
+POST {{CDNBackend.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "nickname": "Juan Pérez",
+  "username": "juan_perez",
+  "email": "juan@example.com",
+  "password": "supersecreto1",
+  "description": "Hola, soy Juan."
+}
+
+### Login
+POST {{CDNBackend.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "juan@example.com",
+  "password": "supersecreto1"
+}
+
+# ------------------------------------------------------------
+# Usuarios (público)
+# ------------------------------------------------------------
+
+### Listar usuarios
+GET {{CDNBackend.API_HostAddress}}/api/users
+
+### Usuario por id
+GET {{CDNBackend.API_HostAddress}}/api/users/1
+
+### Usuario por username
+GET {{CDNBackend.API_HostAddress}}/api/users/juan_perez
+
+# ------------------------------------------------------------
+# Imágenes (requieren token: reemplazá el valor de abajo)
+# ------------------------------------------------------------
+
+@token = <PEGAR_TOKEN_AQUI>
+
+### Subir imagen
+POST {{CDNBackend.API_HostAddress}}/api/images
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=boundary123
+
+--boundary123
+Content-Disposition: form-data; name="name"
+
+Mi foto
+
+--boundary123
+Content-Disposition: form-data; name="description"
+
+Una foto de prueba
+
+--boundary123
+Content-Disposition: form-data; name="file"; filename="foto.png"
+Content-Type: image/png
+
+< ./foto.png
+--boundary123--
+
+### Listar imágenes
+GET {{CDNBackend.API_HostAddress}}/api/images
+
+### Metadata de una imagen
+GET {{CDNBackend.API_HostAddress}}/api/images/1
+
+### Ver imagen (inline)
+GET {{CDNBackend.API_HostAddress}}/api/images/1/download
+
+### Descargar imagen (attachment)
+GET {{CDNBackend.API_HostAddress}}/api/images/1/download?download=true
+
+### Borrar imagen (solo dueño)
+DELETE {{CDNBackend.API_HostAddress}}/api/images/1
+Authorization: Bearer {{token}}
