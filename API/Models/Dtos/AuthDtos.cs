@@ -13,7 +13,7 @@ public record LoginRequest(
     [Required] string Email,
     [Required] string Password);
 
-public record AuthResponse(int UserId, string Nickname, string Username, string Role, string Token);
+public record AuthResponse(int UserId, string Nickname, string Username, string Role, string Token, string? AvatarUrl = null);
 
 public record UpdateProfileRequest(
     [Required] string Nickname,

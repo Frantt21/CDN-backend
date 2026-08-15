@@ -4,6 +4,7 @@ using CDNBackend.API.Data;
 using CDNBackend.API.Middleware;
 using CDNBackend.API.Models.Dtos;
 using CDNBackend.API.Models.Entities;
+using CDNBackend.API.Storage;
 
 namespace CDNBackend.API.Services;
 
@@ -17,14 +18,25 @@ public class AuthService
     private readonly AuthRepository _auth;
     private readonly PasswordHasher _hasher;
     private readonly JwtService _jwt;
+    private readonly IImageStorage _storage;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(Database database, UsersRepository users, AuthRepository auth, PasswordHasher hasher, JwtService jwt)
+    public AuthService(
+        Database database,
+        UsersRepository users,
+        AuthRepository auth,
+        PasswordHasher hasher,
+        JwtService jwt,
+        IImageStorage storage,
+        IConfiguration configuration)
     {
         _database = database;
         _users = users;
         _auth = auth;
         _hasher = hasher;
         _jwt = jwt;
+        _storage = storage;
+        _configuration = configuration;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken)
@@ -92,7 +104,7 @@ public class AuthService
         if (user is null)
             throw new ApiException(401, "Email o contraseña incorrectos.");
 
-        return new AuthResponse(user.Id, user.Nickname, user.Username, user.Role, _jwt.GenerateToken(user));
+        return new AuthResponse(user.Id, user.Nickname, user.Username, user.Role, _jwt.GenerateToken(user), user.AvatarUrl);
     }
 
     public async Task<User> UpdateProfileAsync(int userId, UpdateProfileRequest request, int currentUserId, bool isAdmin)
@@ -113,4 +125,57 @@ public class AuthService
         await _users.UpdateProfileAsync(userId, nickname, username, request.Description);
         return await _users.GetByIdAsync(userId) ?? throw new ApiException(404, "Usuario no encontrado.");
     }
+
+    /// <summary>Sube y asigna el avatar del usuario (solo el dueño o un admin).</summary>
+    public async Task<User> UpdateAvatarAsync(
+        int userId, IFormFile file, int currentUserId, bool isAdmin, CancellationToken cancellationToken)
+    {
+        if (userId != currentUserId && !isAdmin)
+            throw new ApiException(403, "No tenés permisos para editar este perfil.");
+
+        if (file.Length == 0)
+            throw new ApiException(400, "El archivo está vacío.");
+
+        var maxBytes = _configuration.GetValue<long>("ImageUpload:MaxSizeBytes", 10 * 1024 * 1024);
+        if (file.Length > maxBytes)
+            throw new ApiException(400, $"El archivo supera el tamaño máximo de {maxBytes / (1024 * 1024)} MB.");
+
+        var allowedTypes = _configuration.GetSection("ImageUpload:AllowedContentTypes").Get<string[]>() ?? [];
+        if (!allowedTypes.Contains(file.ContentType))
+            throw new ApiException(400, "Tipo de archivo no permitido. Solo imágenes (jpg, png, gif, webp).");
+
+        var user = await _users.GetByIdAsync(userId) ?? throw new ApiException(404, "Usuario no encontrado.");
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        await using var stream = file.OpenReadStream();
+        var url = await _storage.UploadAsync(stream, extension, file.ContentType, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+            await _storage.DeleteAsync(user.AvatarUrl, CancellationToken.None);
+
+        await _users.SetAvatarAsync(userId, url);
+        user.AvatarUrl = url;
+        return user;
+    }
+
+    /// <summary>Abre el archivo del avatar del usuario (null si no tiene).</summary>
+    public async Task<(Stream Stream, string ContentType)?> OpenAvatarAsync(int userId, CancellationToken cancellationToken)
+    {
+        var user = await _users.GetByIdAsync(userId);
+        if (user is null || string.IsNullOrWhiteSpace(user.AvatarUrl))
+            return null;
+
+        var stream = await _storage.OpenReadAsync(user.AvatarUrl, cancellationToken);
+        return (stream, ContentTypeFromExtension(user.AvatarUrl));
+    }
+
+    private static string ContentTypeFromExtension(string url)
+        => Path.GetExtension(url).ToLowerInvariant() switch
+        {
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            _ => "application/octet-stream"
+        };
 }

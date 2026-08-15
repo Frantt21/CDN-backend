@@ -7,5 +7,6 @@ public class User
     public string Username { get; set; } = string.Empty;
     public string Role { get; set; } = "user";
     public string? Description { get; set; }
+    public string? AvatarUrl { get; set; }
     public DateTime CreatedAt { get; set; }
 }

@@ -127,6 +127,9 @@ hace que guardar dos veces sea idempotente (misma fila).
 | GET | `/api/users` | Sí | lista usuarios (solo tabla pública) |
 | GET | `/api/users/{id}` | Sí | perfil por id |
 | GET | `/api/users/{username}` | Sí | perfil por username |
+| PUT | `/api/users/{id}` | JWT | edita nickname/username/descripción (dueño o admin) |
+| POST | `/api/users/{id}/avatar` | JWT | sube avatar multipart (dueño o admin) → `AvatarUrl` |
+| GET | `/api/users/{id}/avatar` | Sí | stream del avatar (404 si no tiene) |
 | POST | `/api/images` | JWT | sube imagen (multipart) → CDN + metadata |
 | GET | `/api/images` | Sí | lista imágenes (filtro por usuario) |
 | GET | `/api/images/{id}` | Sí | metadata |
@@ -184,6 +187,8 @@ hace que guardar dos veces sea idempotente (misma fila).
 8. **Edición de perfil**: `PUT /api/users/{id}` (dueño o admin) + botón "Editar perfil" en el cliente.
 9. Cliente React en `CDN-client/` (Vite + React Router, gitignored) con login/registro, galería, subida y perfil.
 10. **Guardados**: tabla `SavedImages` + `GET/POST/DELETE /api/saved` (repo `SavedImagesRepository`, service `SavedImageService`, controller `SavedImagesController`). Migración: `scripts/migrations/0001_saved_images.sql`.
+
+11. **Avatar de usuario**: columna `Users.AvatarUrl` + `POST/GET /api/users/{id}/avatar` (el archivo se sube al mismo storage que las imágenes y se reemplaza al subir otro). Migración: `scripts/migrations/0002_user_avatar.sql`.
 
 ⏳ **Pendiente:**
 

@@ -7,7 +7,7 @@ namespace CDNBackend.API.Data;
 
 public class UsersRepository
 {
-    private const string Columns = "Id, Nickname, Username, Role, Description, CreatedAt";
+    private const string Columns = "Id, Nickname, Username, Role, Description, AvatarUrl, CreatedAt";
     private readonly Database _db;
 
     public UsersRepository(Database db) => _db = db;
@@ -50,6 +50,14 @@ public class UsersRepository
         await connection.ExecuteAsync(
             "UPDATE Users SET Nickname = @Nickname, Username = @Username, Description = @Description WHERE Id = @Id",
             new { Id = id, Nickname = nickname, Username = username, Description = description });
+    }
+
+    public async Task SetAvatarAsync(int id, string url)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            "UPDATE Users SET AvatarUrl = @Url WHERE Id = @Id",
+            new { Id = id, Url = url });
     }
 
     public async Task<IEnumerable<AdminUserDto>> GetAllWithEmailsAsync()

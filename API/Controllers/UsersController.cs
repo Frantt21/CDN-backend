@@ -41,4 +41,23 @@ public class UsersController : ControllerBase
         var updated = await _auth.UpdateProfileAsync(id, request, currentUserId, User.IsInRole("admin"));
         return Ok(UserDto.From(updated));
     }
+
+    /// <summary>Sube el avatar del usuario (solo el dueño o un admin).</summary>
+    [Authorize]
+    [HttpPost("{id:int}/avatar")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
+    public async Task<ActionResult<UserDto>> UploadAvatar(int id, IFormFile file, CancellationToken cancellationToken)
+    {
+        var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var updated = await _auth.UpdateAvatarAsync(id, file, currentUserId, User.IsInRole("admin"), cancellationToken);
+        return Ok(UserDto.From(updated));
+    }
+
+    /// <summary>Devuelve el archivo del avatar (404 si el usuario no tiene uno).</summary>
+    [HttpGet("{id:int}/avatar")]
+    public async Task<IActionResult> GetAvatar(int id, CancellationToken cancellationToken)
+    {
+        var avatar = await _auth.OpenAvatarAsync(id, cancellationToken);
+        return avatar is { } a ? File(a.Stream, a.ContentType) : NotFound();
+    }
 }
