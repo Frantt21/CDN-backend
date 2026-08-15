@@ -112,7 +112,9 @@ hace que guardar dos veces sea idempotente (misma fila).
 | ImageId | INT NOT NULL (FK → Images.Id) | qué imagen |
 | CreatedAt | DATETIME2 NOT NULL | fecha de guardado |
 
-> Borrar un usuario o una imagen (ON DELETE CASCADE) elimina sus filas de guardados.
+> Borrar un usuario (ON DELETE CASCADE) elimina sus filas de guardados. Al borrar
+> una imagen, la API elimina antes sus guardados (`ImagesRepository.DeleteAsync`),
+> porque el FK a `Images` es NO ACTION (SQL Server rechaza dos rutas de cascade).
 
 ---
 

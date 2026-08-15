@@ -24,3 +24,4 @@ appsettings.*.local.json
 # ==== Logs / temp ====
 *.log
 logs/
+/API/wwwroot/uploads

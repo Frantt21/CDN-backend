@@ -40,7 +40,11 @@ public class ImagesRepository
 
     public async Task DeleteAsync(int id)
     {
+        const string sql = """
+            DELETE FROM SavedImages WHERE ImageId = @Id;
+            DELETE FROM Images WHERE Id = @Id;
+            """;
         using var connection = _db.CreateConnection();
-        await connection.ExecuteAsync("DELETE FROM Images WHERE Id = @Id", new { Id = id });
+        await connection.ExecuteAsync(sql, new { Id = id });
     }
 }

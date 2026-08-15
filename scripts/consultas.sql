@@ -106,7 +106,9 @@ FROM Images
 WHERE Id = @Id;
 
 -- DELETE /api/images/{id} — borrar (dueño o admin; el archivo se
--- borra del storage antes de esta consulta)
+-- borra del storage antes de esta consulta). También borra los
+-- guardados de esa imagen (FK a Images es NO ACTION).
+DELETE FROM SavedImages WHERE ImageId = @Id;
 DELETE FROM Images WHERE Id = @Id;
 
 -- ============================================================
