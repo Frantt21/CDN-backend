@@ -28,20 +28,23 @@ CDN-backend/
 │   ├── Controllers/
 │   │   ├── AuthController.cs     # POST /api/auth/register, /api/auth/login
 │   │   ├── UsersController.cs    # GET /api/users, /api/users/{id|username}
-│   │   └── ImagesController.cs   # POST/GET/DELETE /api/images
+│   │   ├── ImagesController.cs   # POST/GET/DELETE /api/images
+│   │   └── SavedImagesController.cs # GET/POST/DELETE /api/saved (guardados)
 │   ├── Models/
-│   │   ├── Entities/             # User, UserCredential, Image (mapean tablas)
+│   │   ├── Entities/             # User, UserCredential, Image, SavedImage
 │   │   └── Dtos/                 # RegisterRequest, LoginRequest, UserDto, ImageDto...
 │   ├── Data/
 │   │   ├── Database.cs           # fábrica de IDbConnection (SQL Server)
 │   │   ├── UsersRepository.cs    # Dapper: consultas de la tabla pública
 │   │   ├── AuthRepository.cs     # Dapper: email/hash (tabla privada)
-│   │   └── ImagesRepository.cs   # Dapper: metadata de imágenes
+│   │   ├── ImagesRepository.cs   # Dapper: metadata de imágenes
+│   │   └── SavedImagesRepository.cs # Dapper: guardados por usuario
 │   ├── Services/
 │   │   ├── PasswordHasher.cs     # Argon2id (hash + verify)
 │   │   ├── JwtService.cs         # emisión/validación de tokens
 │   │   ├── AuthService.cs        # registro, login, normalización de username
-│   │   └── ImageService.cs       # validación + subida al CDN + metadata
+│   │   ├── ImageService.cs       # validación + subida al CDN + metadata
+│   │   └── SavedImageService.cs  # lógica de guardar/desguardar/listar
 │   ├── Storage/
 │   │   ├── IImageStorage.cs      # Upload / GetUrl / Delete
 │   │   ├── AzureBlobStorage.cs   # CDN real (producción)
@@ -98,6 +101,19 @@ Metadatos; el binario vive en el CDN.
 > La "url" del enunciado queda cubierta por `Images.Url`. Si más adelante querés
 > enlaces independientes (una tabla de links), se agrega una tabla `Links` análoga.
 
+### Tabla `SavedImages` (guardados / bookmarks)
+Cada fila marca una imagen guardada por un usuario. La UNIQUE `(UserId, ImageId)`
+hace que guardar dos veces sea idempotente (misma fila).
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| Id | INT IDENTITY (PK) | |
+| UserId | INT NOT NULL (FK → Users.Id) | quién guarda |
+| ImageId | INT NOT NULL (FK → Images.Id) | qué imagen |
+| CreatedAt | DATETIME2 NOT NULL | fecha de guardado |
+
+> Borrar un usuario o una imagen (ON DELETE CASCADE) elimina sus filas de guardados.
+
 ---
 
 ## 4. Endpoints
@@ -114,6 +130,9 @@ Metadatos; el binario vive en el CDN.
 | GET | `/api/images/{id}` | Sí | metadata |
 | GET | `/api/images/{id}/download` | Sí | descarga/stream desde el CDN |
 | DELETE | `/api/images/{id}` | JWT | borra del CDN + metadata (solo dueño) |
+| GET | `/api/saved` | JWT | imágenes guardadas del usuario actual |
+| POST | `/api/saved/{imageId}` | JWT | guarda una imagen (idempotente) |
+| DELETE | `/api/saved/{imageId}` | JWT | quita una imagen de los guardados |
 
 ---
 
@@ -162,6 +181,7 @@ Metadatos; el binario vive en el CDN.
 7. **Roles** (`user`/`admin`) en la DB + claim en el JWT + endpoints admin (`GET /api/admin/users`, borrar cualquier imagen).
 8. **Edición de perfil**: `PUT /api/users/{id}` (dueño o admin) + botón "Editar perfil" en el cliente.
 9. Cliente React en `CDN-client/` (Vite + React Router, gitignored) con login/registro, galería, subida y perfil.
+10. **Guardados**: tabla `SavedImages` + `GET/POST/DELETE /api/saved` (repo `SavedImagesRepository`, service `SavedImageService`, controller `SavedImagesController`). Migración: `scripts/migrations/0001_saved_images.sql`.
 
 ⏳ **Pendiente:**
 

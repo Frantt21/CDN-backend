@@ -12,6 +12,7 @@ GO
 USE CDNBackend;
 GO
 
+IF OBJECT_ID(N'dbo.SavedImages', N'U') IS NOT NULL DROP TABLE dbo.SavedImages;
 IF OBJECT_ID(N'dbo.Images', N'U') IS NOT NULL DROP TABLE dbo.Images;
 IF OBJECT_ID(N'dbo.UserCredentials', N'U') IS NOT NULL DROP TABLE dbo.UserCredentials;
 IF OBJECT_ID(N'dbo.Users', N'U') IS NOT NULL DROP TABLE dbo.Users;
@@ -73,4 +74,21 @@ CREATE TABLE dbo.Images
 GO
 
 CREATE INDEX IX_Images_UserId ON dbo.Images (UserId);
+GO
+
+-- ------------------------------------------------------------
+-- Guardados: el usuario marca imágenes como favoritas (bookmarks).
+-- La UNIQUE (UserId, ImageId) hace que guardar dos veces sea idempotente.
+-- ------------------------------------------------------------
+CREATE TABLE dbo.SavedImages
+(
+    Id        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SavedImages PRIMARY KEY,
+    UserId    INT       NOT NULL CONSTRAINT FK_SavedImages_Users REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+    ImageId   INT       NOT NULL CONSTRAINT FK_SavedImages_Images REFERENCES dbo.Images (Id) ON DELETE CASCADE,
+    CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_SavedImages_CreatedAt DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT UX_SavedImages_User_Image UNIQUE (UserId, ImageId)
+);
+GO
+
+CREATE INDEX IX_SavedImages_UserId ON dbo.SavedImages (UserId);
 GO

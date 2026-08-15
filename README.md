@@ -69,6 +69,9 @@ El log de requests en desarrollo se activa en `API/appsettings.Development.json`
 | GET | `/api/images/{id}` | — | Metadata |
 | GET | `/api/images/{id}/download` | — | Ver (`?download=true` para descargar) |
 | DELETE | `/api/images/{id}` | JWT | Borra (dueño o admin) |
+| GET | `/api/saved` | JWT | Imágenes guardadas del usuario actual |
+| POST | `/api/saved/{imageId}` | JWT | Guarda una imagen (idempotente) |
+| DELETE | `/api/saved/{imageId}` | JWT | Quita una imagen de los guardados |
 | GET | `/api/admin/users` | admin | Lista usuarios con email (solo rol `admin`) |
 
 ## Roles y permisos

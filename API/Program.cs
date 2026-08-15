@@ -16,12 +16,14 @@ builder.Services.AddSingleton<Database>();
 builder.Services.AddScoped<UsersRepository>();
 builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<ImagesRepository>();
+builder.Services.AddScoped<SavedImagesRepository>();
 
 // Servicios
 builder.Services.AddScoped<PasswordHasher>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ImageService>();
+builder.Services.AddScoped<SavedImageService>();
 
 // Almacenamiento de imágenes (Local en dev, Azure CDN en producción)
 var storageProvider = builder.Configuration["Storage:Provider"];

@@ -108,3 +108,27 @@ WHERE Id = @Id;
 -- DELETE /api/images/{id} — borrar (dueño o admin; el archivo se
 -- borra del storage antes de esta consulta)
 DELETE FROM Images WHERE Id = @Id;
+
+-- ============================================================
+-- 4) GUARDADOS — API/Data/SavedImagesRepository.cs
+-- ============================================================
+
+-- POST /api/saved/{imageId} — guardar (idempotente: si ya estaba
+-- guardada la fila no se inserta otra vez)
+INSERT INTO SavedImages (UserId, ImageId)
+SELECT @UserId, @ImageId
+WHERE NOT EXISTS (
+    SELECT 1 FROM SavedImages
+    WHERE UserId = @UserId AND ImageId = @ImageId
+);
+
+-- DELETE /api/saved/{imageId} — quitar de guardados
+DELETE FROM SavedImages WHERE UserId = @UserId AND ImageId = @ImageId;
+
+-- GET /api/saved — imágenes guardadas del usuario actual,
+-- unidas a los metadatos de Images, ordenadas por fecha de guardado
+SELECT i.Id, i.UserId, i.Name, i.Description, i.Url, i.ContentType, i.SizeBytes, i.CreatedAt
+FROM SavedImages s
+JOIN Images i ON i.Id = s.ImageId
+WHERE s.UserId = @UserId
+ORDER BY s.CreatedAt DESC;
