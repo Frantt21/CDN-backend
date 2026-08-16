@@ -176,49 +176,72 @@ public class AuthService
         return updated;
     }
 
-    /// <summary>Sube y asigna el avatar del usuario (solo el dueño o un admin).</summary>
+    /// <summary>
+    /// Sube y/o reposiciona el avatar (solo el dueño o un admin).
+    /// El archivo es opcional: si no viene, solo se actualiza la posición
+    /// (JSON del editor: {"x","y","zoom"}).
+    /// </summary>
     public async Task<User> UpdateAvatarAsync(
-        int userId, IFormFile file, int currentUserId, bool isAdmin, CancellationToken cancellationToken)
+        int userId, IFormFile? file, string? position, int currentUserId, bool isAdmin, CancellationToken cancellationToken)
     {
         if (userId != currentUserId && !isAdmin)
             throw new ApiException(403, "No tenés permisos para editar este perfil.");
-        ValidateImageFile(file);
 
         var user = await _users.GetByIdAsync(userId) ?? throw new ApiException(404, "Usuario no encontrado.");
 
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        await using var stream = file.OpenReadStream();
-        var url = await _storage.UploadAsync(stream, extension, file.ContentType, cancellationToken);
+        if (file is { Length: > 0 })
+        {
+            ValidateImageFile(file);
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            await using var stream = file.OpenReadStream();
+            var url = await _storage.UploadAsync(stream, extension, file.ContentType, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+                await _storage.DeleteAsync(user.AvatarUrl, CancellationToken.None);
+            user.AvatarUrl = url;
+        }
 
-        if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
-            await _storage.DeleteAsync(user.AvatarUrl, CancellationToken.None);
+        if (!string.IsNullOrWhiteSpace(position))
+            user.AvatarPosition = position;
 
-        await _users.SetAvatarAsync(userId, url);
-        user.AvatarUrl = url;
-        await _realtime.UserUpdatedAsync(UserDto.From(user));
+        if (file is { Length: > 0 } || !string.IsNullOrWhiteSpace(position))
+        {
+            await _users.SetAvatarAsync(userId, user.AvatarUrl, user.AvatarPosition);
+            await _realtime.UserUpdatedAsync(UserDto.From(user));
+        }
         return user;
     }
 
-    /// <summary>Sube y asigna el banner del perfil (solo el dueño o un admin).</summary>
+    /// <summary>
+    /// Sube y/o reposiciona el banner del perfil (solo el dueño o un admin).
+    /// El archivo es opcional: si no viene, solo se actualiza la posición.
+    /// </summary>
     public async Task<User> UpdateBannerAsync(
-        int userId, IFormFile file, int currentUserId, bool isAdmin, CancellationToken cancellationToken)
+        int userId, IFormFile? file, string? position, int currentUserId, bool isAdmin, CancellationToken cancellationToken)
     {
         if (userId != currentUserId && !isAdmin)
             throw new ApiException(403, "No tenés permisos para editar este perfil.");
-        ValidateImageFile(file);
 
         var user = await _users.GetByIdAsync(userId) ?? throw new ApiException(404, "Usuario no encontrado.");
 
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        await using var stream = file.OpenReadStream();
-        var url = await _storage.UploadAsync(stream, extension, file.ContentType, cancellationToken);
+        if (file is { Length: > 0 })
+        {
+            ValidateImageFile(file);
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            await using var stream = file.OpenReadStream();
+            var url = await _storage.UploadAsync(stream, extension, file.ContentType, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(user.BannerUrl))
+                await _storage.DeleteAsync(user.BannerUrl, CancellationToken.None);
+            user.BannerUrl = url;
+        }
 
-        if (!string.IsNullOrWhiteSpace(user.BannerUrl))
-            await _storage.DeleteAsync(user.BannerUrl, CancellationToken.None);
+        if (!string.IsNullOrWhiteSpace(position))
+            user.BannerPosition = position;
 
-        await _users.SetBannerAsync(userId, url);
-        user.BannerUrl = url;
-        await _realtime.UserUpdatedAsync(UserDto.From(user));
+        if (file is { Length: > 0 } || !string.IsNullOrWhiteSpace(position))
+        {
+            await _users.SetBannerAsync(userId, user.BannerUrl, user.BannerPosition);
+            await _realtime.UserUpdatedAsync(UserDto.From(user));
+        }
         return user;
     }
 

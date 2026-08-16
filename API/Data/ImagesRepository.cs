@@ -5,7 +5,7 @@ namespace CDNBackend.API.Data;
 
 public class ImagesRepository
 {
-    private const string Columns = "Id, UserId, Name, Description, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt";
+    private const string Columns = "Id, UserId, Name, Description, Category, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt";
     private readonly Database _db;
 
     public ImagesRepository(Database db) => _db = db;
@@ -13,8 +13,8 @@ public class ImagesRepository
     public async Task<int> InsertAsync(Image image)
     {
         const string sql = """
-            INSERT INTO Images (UserId, Name, Description, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt)
-            VALUES (@UserId, @Name, @Description, @Url, @ThumbnailUrl, @ContentType, @SizeBytes, @CreatedAt);
+            INSERT INTO Images (UserId, Name, Description, Category, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt)
+            VALUES (@UserId, @Name, @Description, @Category, @Url, @ThumbnailUrl, @ContentType, @SizeBytes, @CreatedAt);
             SELECT CAST(SCOPE_IDENTITY() AS INT);
             """;
         using var connection = _db.CreateConnection();

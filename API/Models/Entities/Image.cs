@@ -6,6 +6,8 @@ public class Image
     public int UserId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    /// <summary>Categoría opcional de la imagen (solo se muestra en el detalle).</summary>
+    public string? Category { get; set; }
     public string Url { get; set; } = string.Empty;
     /// <summary>Versión reducida para grids (null en imágenes previas a esta feature).</summary>
     public string? ThumbnailUrl { get; set; }

@@ -7,7 +7,7 @@ namespace CDNBackend.API.Data;
 
 public class UsersRepository
 {
-    private const string Columns = "Id, Nickname, Username, Role, Description, AvatarUrl, BannerUrl, CreatedAt";
+    private const string Columns = "Id, Nickname, Username, Role, Description, AvatarUrl, BannerUrl, AvatarPosition, BannerPosition, CreatedAt";
     private readonly Database _db;
 
     public UsersRepository(Database db) => _db = db;
@@ -52,20 +52,20 @@ public class UsersRepository
             new { Id = id, Nickname = nickname, Username = username, Description = description });
     }
 
-    public async Task SetAvatarAsync(int id, string url)
+    public async Task SetAvatarAsync(int id, string? url, string? position)
     {
         using var connection = _db.CreateConnection();
         await connection.ExecuteAsync(
-            "UPDATE Users SET AvatarUrl = @Url WHERE Id = @Id",
-            new { Id = id, Url = url });
+            "UPDATE Users SET AvatarUrl = @Url, AvatarPosition = @Position WHERE Id = @Id",
+            new { Id = id, Url = url, Position = position });
     }
 
-    public async Task SetBannerAsync(int id, string url)
+    public async Task SetBannerAsync(int id, string? url, string? position)
     {
         using var connection = _db.CreateConnection();
         await connection.ExecuteAsync(
-            "UPDATE Users SET BannerUrl = @Url WHERE Id = @Id",
-            new { Id = id, Url = url });
+            "UPDATE Users SET BannerUrl = @Url, BannerPosition = @Position WHERE Id = @Id",
+            new { Id = id, Url = url, Position = position });
     }
 
     public async Task<IEnumerable<AdminUserDto>> GetAllWithEmailsAsync()

@@ -31,6 +31,8 @@ CREATE TABLE dbo.Users
     Description NVARCHAR(500) NULL,
     AvatarUrl   NVARCHAR(500) NULL, -- archivo del avatar (URL content-addressed)
     BannerUrl   NVARCHAR(500) NULL, -- imagen de fondo del perfil (URL content-addressed)
+    AvatarPosition NVARCHAR(64) NULL, -- JSON {"x","y","zoom"} del editor de avatar
+    BannerPosition NVARCHAR(64) NULL, -- JSON {"x","y","zoom"} del editor de banner
     CreatedAt   DATETIME2     NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME()
 );
 GO
@@ -88,6 +90,7 @@ CREATE TABLE dbo.Images
     UserId      INT           NOT NULL CONSTRAINT FK_Images_Users REFERENCES dbo.Users (Id) ON DELETE CASCADE,
     Name        NVARCHAR(255) NOT NULL,
     Description NVARCHAR(500) NULL,
+    Category    NVARCHAR(64)  NULL,
     Url         NVARCHAR(500) NOT NULL,
     ThumbnailUrl NVARCHAR(500) NULL,
     ContentType NVARCHAR(100) NOT NULL,

@@ -47,14 +47,14 @@ public class UsersController : ControllerBase
         return Ok(UserDto.From(updated));
     }
 
-    /// <summary>Sube el avatar del usuario (solo el dueño o un admin).</summary>
+    /// <summary>Sube y/o reposiciona el avatar (solo el dueño o un admin).</summary>
     [Authorize]
     [HttpPost("{id:int}/avatar")]
     [RequestSizeLimit(11 * 1024 * 1024)]
-    public async Task<ActionResult<UserDto>> UploadAvatar(int id, IFormFile file, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserDto>> UploadAvatar(int id, [FromForm] string? position, IFormFile? file, CancellationToken cancellationToken)
     {
         var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var updated = await _auth.UpdateAvatarAsync(id, file, currentUserId, User.IsInRole("admin"), cancellationToken);
+        var updated = await _auth.UpdateAvatarAsync(id, file, position, currentUserId, User.IsInRole("admin"), cancellationToken);
         return Ok(UserDto.From(updated));
     }
 
@@ -72,14 +72,14 @@ public class UsersController : ControllerBase
         return NotFound();
     }
 
-    /// <summary>Sube el banner del perfil (solo el dueño o un admin).</summary>
+    /// <summary>Sube y/o reposiciona el banner del perfil (solo el dueño o un admin).</summary>
     [Authorize]
     [HttpPost("{id:int}/banner")]
     [RequestSizeLimit(11 * 1024 * 1024)]
-    public async Task<ActionResult<UserDto>> UploadBanner(int id, IFormFile file, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserDto>> UploadBanner(int id, [FromForm] string? position, IFormFile? file, CancellationToken cancellationToken)
     {
         var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var updated = await _auth.UpdateBannerAsync(id, file, currentUserId, User.IsInRole("admin"), cancellationToken);
+        var updated = await _auth.UpdateBannerAsync(id, file, position, currentUserId, User.IsInRole("admin"), cancellationToken);
         return Ok(UserDto.From(updated));
     }
 

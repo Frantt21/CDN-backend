@@ -74,11 +74,11 @@ El log de requests en desarrollo se activa en `API/appsettings.Development.json`
 | GET | `/api/users/{username}` | — | Perfil por username |
 | GET | `/api/users/check-username` | — | Disponibilidad de username (`?username=&excludeId=`) |
 | PUT | `/api/users/{id}` | JWT | Edita nickname/username/descripción (dueño o admin) |
-| POST | `/api/users/{id}/avatar` | JWT | Sube el avatar (dueño o admin) |
+| POST | `/api/users/{id}/avatar` | JWT | Sube el avatar o actualiza su posición (`file` y/o `position` opcionales, dueño o admin) |
 | GET | `/api/users/{id}/avatar` | — | Archivo del avatar |
-| POST | `/api/users/{id}/banner` | JWT | Sube el banner del perfil (dueño o admin) |
+| POST | `/api/users/{id}/banner` | JWT | Sube el banner o actualiza su posición (`file` y/o `position` opcionales, dueño o admin) |
 | GET | `/api/users/{id}/banner` | — | Archivo del banner (fondo del perfil) |
-| POST | `/api/images` | JWT | Sube imagen (multipart) → storage + metadata + miniatura |
+| POST | `/api/images` | JWT | Sube imagen (multipart) → storage + metadata + miniatura + categoría opcional (`category`) |
 | GET | `/api/images` | — | Lista imágenes (`?userId=` para filtrar) |
 | GET | `/api/images/{id}` | — | Metadata |
 | GET | `/api/images/{id}/download` | — | Archivo original (`?download=true` para descargar) |
@@ -99,7 +99,7 @@ El log de requests en desarrollo se activa en `API/appsettings.Development.json`
 |---|---|---|
 | `ImageUploaded` | `ImageDto` | Se sube una imagen |
 | `ImageDeleted` | `int` (id) | Se borra una imagen |
-| `UserUpdated` | `UserDto` | Se edita perfil o avatar |
+| `UserUpdated` | `UserDto` | Se edita perfil, avatar o banner (incluye posiciones) |
 
 - Emitidos desde `Services/RealtimeService.cs` (puente con `IHubContext<FeedHub>`), invocado por `ImageService` y `AuthService`.
 - Pendiente: autenticar el hub con JWT y agrupar por usuario para eventos privados/notificaciones.
@@ -130,6 +130,8 @@ El log de requests en desarrollo se activa en `API/appsettings.Development.json`
 | `scripts/migrations/0002_user_avatar.sql` | Columna `AvatarUrl` en `Users` (idempotente) |
 | `scripts/migrations/0003_refresh_tokens.sql` | Tabla `RefreshTokens` (idempotente) |
 | `scripts/migrations/0004_user_banner.sql` | Columna `BannerUrl` en `Users` (idempotente) |
+| `scripts/migrations/0005_user_media_position.sql` | Columnas `AvatarPosition`/`BannerPosition` (JSON de posición/zoom, idempotente) |
+| `scripts/migrations/0006_image_category.sql` | Columna `Category` en `Images` (idempotente) |
 | `scripts/consultas.sql` | Referencia de todas las consultas que ejecuta la API, por repositorio y endpoint |
 
 Las migraciones son idempotentes: se pueden correr sobre una base que ya tiene datos sin perderlos.

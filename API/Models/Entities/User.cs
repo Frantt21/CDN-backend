@@ -9,5 +9,9 @@ public class User
     public string? Description { get; set; }
     public string? AvatarUrl { get; set; }
     public string? BannerUrl { get; set; }
+    /// <summary>JSON {"x","y","zoom"} del editor de avatar.</summary>
+    public string? AvatarPosition { get; set; }
+    /// <summary>JSON {"x","y","zoom"} del editor de banner.</summary>
+    public string? BannerPosition { get; set; }
     public DateTime CreatedAt { get; set; }
 }

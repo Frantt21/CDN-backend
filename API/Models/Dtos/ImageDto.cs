@@ -7,6 +7,7 @@ public record ImageDto(
     int UserId,
     string Name,
     string? Description,
+    string? Category,
     string Url,
     string? ThumbnailUrl,
     string ContentType,
@@ -14,5 +15,5 @@ public record ImageDto(
     DateTime CreatedAt)
 {
     public static ImageDto From(Image image) =>
-        new(image.Id, image.UserId, image.Name, image.Description, image.Url, image.ThumbnailUrl, image.ContentType, image.SizeBytes, image.CreatedAt);
+        new(image.Id, image.UserId, image.Name, image.Description, image.Category, image.Url, image.ThumbnailUrl, image.ContentType, image.SizeBytes, image.CreatedAt);
 }

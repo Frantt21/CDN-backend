@@ -32,7 +32,7 @@ public class ImageService
         _realtime = realtime;
     }
 
-    public async Task<Image> UploadAsync(int userId, IFormFile file, string? name, string? description, CancellationToken cancellationToken)
+    public async Task<Image> UploadAsync(int userId, IFormFile file, string? name, string? description, string? category, CancellationToken cancellationToken)
     {
         if (file.Length == 0)
             throw new ApiException(400, "El archivo está vacío.");
@@ -67,6 +67,7 @@ public class ImageService
             UserId = userId,
             Name = string.IsNullOrWhiteSpace(name) ? file.FileName : name,
             Description = description,
+            Category = string.IsNullOrWhiteSpace(category) ? null : category.Trim(),
             Url = url,
             ThumbnailUrl = thumbnailUrl,
             ContentType = file.ContentType,

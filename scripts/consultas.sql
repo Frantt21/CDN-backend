@@ -15,21 +15,22 @@ GO
 -- ============================================================
 -- 1) USUARIOS (tabla pública) — API/Data/UsersRepository.cs
 --    Columnas: Id, Nickname, Username, Role, Description,
---              AvatarUrl, CreatedAt
+--              AvatarUrl, BannerUrl, AvatarPosition, BannerPosition,
+--              CreatedAt
 -- ============================================================
 
 -- GET /api/users — listar todos los usuarios (público)
-SELECT Id, Nickname, Username, Role, Description, AvatarUrl, CreatedAt
+SELECT Id, Nickname, Username, Role, Description, AvatarUrl, BannerUrl, AvatarPosition, BannerPosition, CreatedAt
 FROM Users
 ORDER BY CreatedAt DESC;
 
 -- GET /api/users/{id} — perfil por id (público)
-SELECT Id, Nickname, Username, Role, Description, AvatarUrl, CreatedAt
+SELECT Id, Nickname, Username, Role, Description, AvatarUrl, BannerUrl, AvatarPosition, BannerPosition, CreatedAt
 FROM Users
 WHERE Id = @Id;
 
 -- GET /api/users/{username} — perfil por username (público)
-SELECT Id, Nickname, Username, Role, Description, AvatarUrl, CreatedAt
+SELECT Id, Nickname, Username, Role, Description, AvatarUrl, BannerUrl, AvatarPosition, BannerPosition, CreatedAt
 FROM Users
 WHERE Username = @Username;
 
@@ -55,16 +56,22 @@ SET Nickname = @Nickname,
     Description = @Description
 WHERE Id = @Id;
 
--- POST /api/users/{id}/avatar — asignar avatar (dueño o admin).
--- El archivo se sube al storage antes; acá solo se guarda la URL.
+-- POST /api/users/{id}/avatar — subir avatar o actualizar su posición.
+-- El archivo se sube al storage antes. @Url y @Position siempre llevan
+-- los valores actuales del usuario (el servicio conserva el existente
+-- cuando solo cambia uno de los dos); el JSON de posición/zoom lo
+-- produce el editor del cliente ({"x":50,"y":50,"zoom":1}).
 UPDATE Users
-SET AvatarUrl = @Url
+SET AvatarUrl = @Url,
+    AvatarPosition = @Position
 WHERE Id = @Id;
 
--- POST /api/users/{id}/banner — asignar banner del perfil (dueño o admin).
--- Igual que el avatar: el archivo se sube al storage antes.
+-- POST /api/users/{id}/banner — subir banner o actualizar su posición.
+-- Igual que el avatar: archivo y/o posición opcionales, siempre con
+-- los valores actuales del usuario.
 UPDATE Users
-SET BannerUrl = @Url
+SET BannerUrl = @Url,
+    BannerPosition = @Position
 WHERE Id = @Id;
 
 -- GET /api/admin/users — usuarios con email (solo rol admin).
@@ -128,25 +135,25 @@ WHERE TokenHash = @TokenHash;
 -- ============================================================
 
 -- POST /api/images — insertar metadata de la imagen subida
--- (ThumbnailUrl se genera al subir; puede ser NULL si falló o en
--- imágenes previas a esta feature)
-INSERT INTO Images (UserId, Name, Description, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt)
-VALUES (@UserId, @Name, @Description, @Url, @ThumbnailUrl, @ContentType, @SizeBytes, @CreatedAt);
+-- (ThumbnailUrl se genera al subir; Category es opcional y solo se
+-- muestra en el detalle, no en las cards)
+INSERT INTO Images (UserId, Name, Description, Category, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt)
+VALUES (@UserId, @Name, @Description, @Category, @Url, @ThumbnailUrl, @ContentType, @SizeBytes, @CreatedAt);
 SELECT CAST(SCOPE_IDENTITY() AS INT);
 
 -- GET /api/images — listar todas las imágenes
-SELECT Id, UserId, Name, Description, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt
+SELECT Id, UserId, Name, Description, Category, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt
 FROM Images
 ORDER BY CreatedAt DESC;
 
 -- GET /api/images?userId= — listar las imágenes de un usuario
-SELECT Id, UserId, Name, Description, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt
+SELECT Id, UserId, Name, Description, Category, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt
 FROM Images
 WHERE UserId = @UserId
 ORDER BY CreatedAt DESC;
 
 -- GET /api/images/{id} — metadata de una imagen
-SELECT Id, UserId, Name, Description, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt
+SELECT Id, UserId, Name, Description, Category, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt
 FROM Images
 WHERE Id = @Id;
 

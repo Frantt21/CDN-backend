@@ -20,10 +20,11 @@ public class ImagesController : ControllerBase
     public async Task<ActionResult<ImageDto>> Upload(
         [FromForm] string? name,
         [FromForm] string? description,
+        [FromForm] string? category,
         IFormFile file,
         CancellationToken cancellationToken)
     {
-        var image = await _images.UploadAsync(GetUserId(), file, name, description, cancellationToken);
+        var image = await _images.UploadAsync(GetUserId(), file, name, description, category, cancellationToken);
         return Created($"/api/images/{image.Id}", ImageDto.From(image));
     }
 
