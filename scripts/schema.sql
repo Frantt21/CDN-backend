@@ -30,6 +30,7 @@ CREATE TABLE dbo.Users
     Role        NVARCHAR(20)  NOT NULL CONSTRAINT DF_Users_Role DEFAULT 'user', -- 'user' | 'admin'
     Description NVARCHAR(500) NULL,
     AvatarUrl   NVARCHAR(500) NULL, -- archivo del avatar (URL content-addressed)
+    BannerUrl   NVARCHAR(500) NULL, -- imagen de fondo del perfil (URL content-addressed)
     CreatedAt   DATETIME2     NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME()
 );
 GO

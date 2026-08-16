@@ -61,6 +61,12 @@ UPDATE Users
 SET AvatarUrl = @Url
 WHERE Id = @Id;
 
+-- POST /api/users/{id}/banner — asignar banner del perfil (dueño o admin).
+-- Igual que el avatar: el archivo se sube al storage antes.
+UPDATE Users
+SET BannerUrl = @Url
+WHERE Id = @Id;
+
 -- GET /api/admin/users — usuarios con email (solo rol admin).
 -- Une la tabla pública con la privada (UserCredentials).
 SELECT u.Id, u.Nickname, u.Username, u.Role, u.CreatedAt, c.Email

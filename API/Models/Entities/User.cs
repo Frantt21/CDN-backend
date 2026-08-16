@@ -8,5 +8,6 @@ public class User
     public string Role { get; set; } = "user";
     public string? Description { get; set; }
     public string? AvatarUrl { get; set; }
+    public string? BannerUrl { get; set; }
     public DateTime CreatedAt { get; set; }
 }

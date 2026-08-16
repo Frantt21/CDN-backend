@@ -182,17 +182,7 @@ public class AuthService
     {
         if (userId != currentUserId && !isAdmin)
             throw new ApiException(403, "No tenés permisos para editar este perfil.");
-
-        if (file.Length == 0)
-            throw new ApiException(400, "El archivo está vacío.");
-
-        var maxBytes = _configuration.GetValue<long>("ImageUpload:MaxSizeBytes", 10 * 1024 * 1024);
-        if (file.Length > maxBytes)
-            throw new ApiException(400, $"El archivo supera el tamaño máximo de {maxBytes / (1024 * 1024)} MB.");
-
-        var allowedTypes = _configuration.GetSection("ImageUpload:AllowedContentTypes").Get<string[]>() ?? [];
-        if (!allowedTypes.Contains(file.ContentType))
-            throw new ApiException(400, "Tipo de archivo no permitido. Solo imágenes (jpg, png, gif, webp).");
+        ValidateImageFile(file);
 
         var user = await _users.GetByIdAsync(userId) ?? throw new ApiException(404, "Usuario no encontrado.");
 
@@ -207,6 +197,55 @@ public class AuthService
         user.AvatarUrl = url;
         await _realtime.UserUpdatedAsync(UserDto.From(user));
         return user;
+    }
+
+    /// <summary>Sube y asigna el banner del perfil (solo el dueño o un admin).</summary>
+    public async Task<User> UpdateBannerAsync(
+        int userId, IFormFile file, int currentUserId, bool isAdmin, CancellationToken cancellationToken)
+    {
+        if (userId != currentUserId && !isAdmin)
+            throw new ApiException(403, "No tenés permisos para editar este perfil.");
+        ValidateImageFile(file);
+
+        var user = await _users.GetByIdAsync(userId) ?? throw new ApiException(404, "Usuario no encontrado.");
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        await using var stream = file.OpenReadStream();
+        var url = await _storage.UploadAsync(stream, extension, file.ContentType, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(user.BannerUrl))
+            await _storage.DeleteAsync(user.BannerUrl, CancellationToken.None);
+
+        await _users.SetBannerAsync(userId, url);
+        user.BannerUrl = url;
+        await _realtime.UserUpdatedAsync(UserDto.From(user));
+        return user;
+    }
+
+    /// <summary>Abre el archivo del banner del usuario (null si no tiene).</summary>
+    public async Task<(Stream Stream, string ContentType)?> OpenBannerAsync(int userId, CancellationToken cancellationToken)
+    {
+        var user = await _users.GetByIdAsync(userId);
+        if (user is null || string.IsNullOrWhiteSpace(user.BannerUrl))
+            return null;
+
+        var stream = await _storage.OpenReadAsync(user.BannerUrl, cancellationToken);
+        return (stream, ContentTypeFromExtension(user.BannerUrl));
+    }
+
+    /// <summary>Valida tamaño y tipo de un archivo de imagen (avatar o banner).</summary>
+    private void ValidateImageFile(IFormFile file)
+    {
+        if (file.Length == 0)
+            throw new ApiException(400, "El archivo está vacío.");
+
+        var maxBytes = _configuration.GetValue<long>("ImageUpload:MaxSizeBytes", 10 * 1024 * 1024);
+        if (file.Length > maxBytes)
+            throw new ApiException(400, $"El archivo supera el tamaño máximo de {maxBytes / (1024 * 1024)} MB.");
+
+        var allowedTypes = _configuration.GetSection("ImageUpload:AllowedContentTypes").Get<string[]>() ?? [];
+        if (!allowedTypes.Contains(file.ContentType))
+            throw new ApiException(400, "Tipo de archivo no permitido. Solo imágenes (jpg, png, gif, webp).");
     }
 
     /// <summary>Abre el archivo del avatar del usuario (null si no tiene).</summary>

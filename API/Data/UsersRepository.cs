@@ -7,7 +7,7 @@ namespace CDNBackend.API.Data;
 
 public class UsersRepository
 {
-    private const string Columns = "Id, Nickname, Username, Role, Description, AvatarUrl, CreatedAt";
+    private const string Columns = "Id, Nickname, Username, Role, Description, AvatarUrl, BannerUrl, CreatedAt";
     private readonly Database _db;
 
     public UsersRepository(Database db) => _db = db;
@@ -57,6 +57,14 @@ public class UsersRepository
         using var connection = _db.CreateConnection();
         await connection.ExecuteAsync(
             "UPDATE Users SET AvatarUrl = @Url WHERE Id = @Id",
+            new { Id = id, Url = url });
+    }
+
+    public async Task SetBannerAsync(int id, string url)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            "UPDATE Users SET BannerUrl = @Url WHERE Id = @Id",
             new { Id = id, Url = url });
     }
 

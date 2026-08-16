@@ -71,4 +71,28 @@ public class UsersController : ControllerBase
         }
         return NotFound();
     }
+
+    /// <summary>Sube el banner del perfil (solo el dueño o un admin).</summary>
+    [Authorize]
+    [HttpPost("{id:int}/banner")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
+    public async Task<ActionResult<UserDto>> UploadBanner(int id, IFormFile file, CancellationToken cancellationToken)
+    {
+        var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var updated = await _auth.UpdateBannerAsync(id, file, currentUserId, User.IsInRole("admin"), cancellationToken);
+        return Ok(UserDto.From(updated));
+    }
+
+    /// <summary>Devuelve el archivo del banner (404 si el usuario no tiene uno).</summary>
+    [HttpGet("{id:int}/banner")]
+    public async Task<IActionResult> GetBanner(int id, CancellationToken cancellationToken)
+    {
+        var banner = await _auth.OpenBannerAsync(id, cancellationToken);
+        if (banner is { } b)
+        {
+            Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+            return File(b.Stream, b.ContentType);
+        }
+        return NotFound();
+    }
 }

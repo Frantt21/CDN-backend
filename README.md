@@ -76,6 +76,8 @@ El log de requests en desarrollo se activa en `API/appsettings.Development.json`
 | PUT | `/api/users/{id}` | JWT | Edita nickname/username/descripción (dueño o admin) |
 | POST | `/api/users/{id}/avatar` | JWT | Sube el avatar (dueño o admin) |
 | GET | `/api/users/{id}/avatar` | — | Archivo del avatar |
+| POST | `/api/users/{id}/banner` | JWT | Sube el banner del perfil (dueño o admin) |
+| GET | `/api/users/{id}/banner` | — | Archivo del banner (fondo del perfil) |
 | POST | `/api/images` | JWT | Sube imagen (multipart) → storage + metadata + miniatura |
 | GET | `/api/images` | — | Lista imágenes (`?userId=` para filtrar) |
 | GET | `/api/images/{id}` | — | Metadata |
@@ -127,6 +129,7 @@ El log de requests en desarrollo se activa en `API/appsettings.Development.json`
 | `scripts/migrations/0001_saved_images.sql` | Tabla `SavedImages` (idempotente, sobre base existente) |
 | `scripts/migrations/0002_user_avatar.sql` | Columna `AvatarUrl` en `Users` (idempotente) |
 | `scripts/migrations/0003_refresh_tokens.sql` | Tabla `RefreshTokens` (idempotente) |
+| `scripts/migrations/0004_user_banner.sql` | Columna `BannerUrl` en `Users` (idempotente) |
 | `scripts/consultas.sql` | Referencia de todas las consultas que ejecuta la API, por repositorio y endpoint |
 
 Las migraciones son idempotentes: se pueden correr sobre una base que ya tiene datos sin perderlos.
