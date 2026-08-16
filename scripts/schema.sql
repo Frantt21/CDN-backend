@@ -12,6 +12,7 @@ GO
 USE CDNBackend;
 GO
 
+IF OBJECT_ID(N'dbo.RefreshTokens', N'U') IS NOT NULL DROP TABLE dbo.RefreshTokens;
 IF OBJECT_ID(N'dbo.SavedImages', N'U') IS NOT NULL DROP TABLE dbo.SavedImages;
 IF OBJECT_ID(N'dbo.Images', N'U') IS NOT NULL DROP TABLE dbo.Images;
 IF OBJECT_ID(N'dbo.UserCredentials', N'U') IS NOT NULL DROP TABLE dbo.UserCredentials;
@@ -28,6 +29,7 @@ CREATE TABLE dbo.Users
     Username    NVARCHAR(50)  NOT NULL, -- normalizado: [a-z0-9_]
     Role        NVARCHAR(20)  NOT NULL CONSTRAINT DF_Users_Role DEFAULT 'user', -- 'user' | 'admin'
     Description NVARCHAR(500) NULL,
+    AvatarUrl   NVARCHAR(500) NULL, -- archivo del avatar (URL content-addressed)
     CreatedAt   DATETIME2     NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME()
 );
 GO
@@ -58,6 +60,25 @@ CREATE UNIQUE INDEX UX_UserCredentials_Email ON dbo.UserCredentials (Email);
 GO
 
 -- ------------------------------------------------------------
+-- Refresh tokens: rotación de sesión JWT. Se guarda el HASH del
+-- token (nunca el valor); al usarlo se revoca (RevokedAt) y se
+-- emite uno nuevo. 1:N con Users.
+-- ------------------------------------------------------------
+CREATE TABLE dbo.RefreshTokens
+(
+    Id        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_RefreshTokens PRIMARY KEY,
+    UserId    INT           NOT NULL CONSTRAINT FK_RefreshTokens_Users REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+    TokenHash NVARCHAR(128) NOT NULL,
+    ExpiresAt DATETIME2     NOT NULL,
+    CreatedAt DATETIME2     NOT NULL CONSTRAINT DF_RefreshTokens_CreatedAt DEFAULT SYSUTCDATETIME(),
+    RevokedAt DATETIME2     NULL
+);
+GO
+
+CREATE INDEX IX_RefreshTokens_TokenHash ON dbo.RefreshTokens (TokenHash);
+GO
+
+-- ------------------------------------------------------------
 -- Metadatos de imágenes. El binario vive en el CDN (Images.Url)
 -- ------------------------------------------------------------
 CREATE TABLE dbo.Images
@@ -67,6 +88,7 @@ CREATE TABLE dbo.Images
     Name        NVARCHAR(255) NOT NULL,
     Description NVARCHAR(500) NULL,
     Url         NVARCHAR(500) NOT NULL,
+    ThumbnailUrl NVARCHAR(500) NULL,
     ContentType NVARCHAR(100) NOT NULL,
     SizeBytes   BIGINT        NULL,
     CreatedAt   DATETIME2     NOT NULL CONSTRAINT DF_Images_CreatedAt DEFAULT SYSUTCDATETIME()

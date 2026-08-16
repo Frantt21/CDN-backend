@@ -63,6 +63,12 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetAvatar(int id, CancellationToken cancellationToken)
     {
         var avatar = await _auth.OpenAvatarAsync(id, cancellationToken);
-        return avatar is { } a ? File(a.Stream, a.ContentType) : NotFound();
+        if (avatar is { } a)
+        {
+            // Mismo criterio que las imágenes: cada avatar tiene una URL única.
+            Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+            return File(a.Stream, a.ContentType);
+        }
+        return NotFound();
     }
 }

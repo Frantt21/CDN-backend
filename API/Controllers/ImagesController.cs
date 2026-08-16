@@ -41,9 +41,27 @@ public class ImagesController : ControllerBase
         var image = await _images.GetByIdAsync(id);
         var stream = await _images.OpenReadAsync(image.Url, cancellationToken);
 
+        // Las URLs son content-addressed (guid único por subida): el archivo nunca
+        // cambia en esa URL. Cache largo + immutable para que el navegador baje
+        // cada imagen UNA sola vez (evita el lag/recarga al navegar o cambiar tabs).
+        Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+
         return download
             ? File(stream, image.ContentType, image.Name, enableRangeProcessing: true)
             : File(stream, image.ContentType, enableRangeProcessing: true);
+    }
+
+    /// <summary>
+    /// Versión reducida de la imagen para grids (mucho más liviana de decodificar
+    /// y texturizar). Si la imagen no tiene miniatura, se genera bajo demanda.
+    /// </summary>
+    [HttpGet("{id:int}/thumbnail")]
+    public async Task<IActionResult> Thumbnail(int id, CancellationToken cancellationToken = default)
+    {
+        var image = await _images.GetByIdAsync(id);
+        var (stream, contentType) = await _images.OpenThumbnailAsync(image, cancellationToken);
+        Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+        return File(stream, contentType, enableRangeProcessing: true);
     }
 
     [Authorize]

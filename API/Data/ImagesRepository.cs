@@ -5,7 +5,7 @@ namespace CDNBackend.API.Data;
 
 public class ImagesRepository
 {
-    private const string Columns = "Id, UserId, Name, Description, Url, ContentType, SizeBytes, CreatedAt";
+    private const string Columns = "Id, UserId, Name, Description, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt";
     private readonly Database _db;
 
     public ImagesRepository(Database db) => _db = db;
@@ -13,8 +13,8 @@ public class ImagesRepository
     public async Task<int> InsertAsync(Image image)
     {
         const string sql = """
-            INSERT INTO Images (UserId, Name, Description, Url, ContentType, SizeBytes, CreatedAt)
-            VALUES (@UserId, @Name, @Description, @Url, @ContentType, @SizeBytes, @CreatedAt);
+            INSERT INTO Images (UserId, Name, Description, Url, ThumbnailUrl, ContentType, SizeBytes, CreatedAt)
+            VALUES (@UserId, @Name, @Description, @Url, @ThumbnailUrl, @ContentType, @SizeBytes, @CreatedAt);
             SELECT CAST(SCOPE_IDENTITY() AS INT);
             """;
         using var connection = _db.CreateConnection();
@@ -36,6 +36,14 @@ public class ImagesRepository
                 $"SELECT {Columns} FROM Images WHERE UserId = @UserId ORDER BY CreatedAt DESC",
                 new { UserId = userId.Value })
             : await connection.QueryAsync<Image>($"SELECT {Columns} FROM Images ORDER BY CreatedAt DESC");
+    }
+
+    public async Task SetThumbnailUrlAsync(int id, string url)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            "UPDATE Images SET ThumbnailUrl = @Url WHERE Id = @Id",
+            new { Id = id, Url = url });
     }
 
     public async Task DeleteAsync(int id)
