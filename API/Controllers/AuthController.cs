@@ -22,4 +22,8 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request, CancellationToken cancellationToken)
         => Ok(await _auth.LoginAsync(request, cancellationToken));
+
+    [HttpPost("refresh")]
+    public async Task<ActionResult<AuthResponse>> Refresh(RefreshRequest request, CancellationToken cancellationToken)
+        => Ok(await _auth.RefreshAsync(request.RefreshToken, cancellationToken));
 }

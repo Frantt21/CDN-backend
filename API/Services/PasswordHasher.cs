@@ -40,6 +40,8 @@ public class PasswordHasher
         }
 
         var actual = Argon2idHash(password, salt);
+        if (actual.Length != expected.Length)
+            return false;
         return CryptographicOperations.FixedTimeEquals(actual, expected);
     }
 

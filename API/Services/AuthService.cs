@@ -89,12 +89,13 @@ public class AuthService
             throw;
         }
 
-        return new AuthResponse(user.Id, user.Nickname, user.Username, user.Role, _jwt.GenerateToken(user));
+        return new AuthResponse(user.Id, user.Nickname, user.Username, user.Role,
+            _jwt.GenerateToken(user), user.AvatarUrl, await CreateAndStoreRefreshTokenAsync(user.Id));
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
-        var email = request.Email.Trim().ToLowerInvariant();
+        var email = request.Email?.Trim().ToLowerInvariant() ?? string.Empty;
 
         var credential = await _auth.GetByEmailAsync(email);
         if (credential is null || !_hasher.Verify(request.Password, credential.PasswordHash))
@@ -104,7 +105,42 @@ public class AuthService
         if (user is null)
             throw new ApiException(401, "Email o contraseña incorrectos.");
 
-        return new AuthResponse(user.Id, user.Nickname, user.Username, user.Role, _jwt.GenerateToken(user), user.AvatarUrl);
+        return new AuthResponse(user.Id, user.Nickname, user.Username, user.Role,
+            _jwt.GenerateToken(user), user.AvatarUrl, await CreateAndStoreRefreshTokenAsync(user.Id));
+    }
+
+    /// <summary>Renueva la sesión: valida el refresh token, lo rota y emite un access token nuevo.</summary>
+    public async Task<AuthResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            throw new ApiException(400, "Falta el refresh token.");
+
+        var stored = await _auth.GetRefreshTokenByHashAsync(_jwt.HashRefreshToken(refreshToken));
+        if (stored is null || stored.RevokedAt is not null || stored.ExpiresAt <= DateTime.UtcNow)
+            throw new ApiException(401, "La sesión expiró. Volvé a iniciar sesión.");
+
+        var user = await _users.GetByIdAsync(stored.UserId);
+        if (user is null)
+            throw new ApiException(401, "La sesión expiró. Volvé a iniciar sesión.");
+
+        // Rotación: el refresh token usado queda revocado y se emite uno nuevo.
+        await _auth.RevokeRefreshTokenAsync(stored.TokenHash);
+
+        return new AuthResponse(user.Id, user.Nickname, user.Username, user.Role,
+            _jwt.GenerateToken(user), user.AvatarUrl, await CreateAndStoreRefreshTokenAsync(user.Id));
+    }
+
+    private async Task<string> CreateAndStoreRefreshTokenAsync(int userId)
+    {
+        var token = _jwt.GenerateRefreshToken();
+        var lifetimeDays = _configuration.GetValue<double>("Jwt:RefreshTokenExpiryDays", 7);
+        await _auth.InsertRefreshTokenAsync(new RefreshToken
+        {
+            UserId = userId,
+            TokenHash = _jwt.HashRefreshToken(token),
+            ExpiresAt = DateTime.UtcNow.AddDays(lifetimeDays)
+        });
+        return token;
     }
 
     public async Task<User> UpdateProfileAsync(int userId, UpdateProfileRequest request, int currentUserId, bool isAdmin)

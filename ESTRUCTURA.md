@@ -116,14 +116,28 @@ hace que guardar dos veces sea idempotente (misma fila).
 > una imagen, la API elimina antes sus guardados (`ImagesRepository.DeleteAsync`),
 > porque el FK a `Images` es NO ACTION (SQL Server rechaza dos rutas de cascade).
 
+### Tabla `RefreshTokens` (renovación de sesión)
+Cada fila es un refresh token **hasheado (SHA-256)**; el token en claro nunca se guarda.
+`ExpiresAt` (7 días por defecto) y `RevokedAt` permiten rotación y revocación.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| Id | INT IDENTITY (PK) | |
+| UserId | INT NOT NULL (FK → Users.Id) | ON DELETE CASCADE |
+| TokenHash | NVARCHAR(128) NOT NULL | SHA-256 en hexa (indexado) |
+| ExpiresAt | DATETIME2 NOT NULL | momento de expiración (UTC) |
+| CreatedAt | DATETIME2 NOT NULL | default `SYSUTCDATETIME()` |
+| RevokedAt | DATETIME2 NULL | se setea al rotar/revocar |
+
 ---
 
 ## 4. Endpoints
 
 | Método | Ruta | Público | Descripción |
 |---|---|---|---|
-| POST | `/api/auth/register` | Sí | crea usuario + credenciales → devuelve JWT |
-| POST | `/api/auth/login` | Sí | valida email + Argon2 → devuelve JWT |
+| POST | `/api/auth/register` | Sí | crea usuario + credenciales → devuelve JWT + refresh token |
+| POST | `/api/auth/login` | Sí | valida email + Argon2 → devuelve JWT + refresh token |
+| POST | `/api/auth/refresh` | Sí | rota el refresh token → devuelve JWT nuevo + refresh token nuevo |
 | GET | `/api/users` | Sí | lista usuarios (solo tabla pública) |
 | GET | `/api/users/{id}` | Sí | perfil por id |
 | GET | `/api/users/{username}` | Sí | perfil por username |
@@ -189,6 +203,8 @@ hace que guardar dos veces sea idempotente (misma fila).
 10. **Guardados**: tabla `SavedImages` + `GET/POST/DELETE /api/saved` (repo `SavedImagesRepository`, service `SavedImageService`, controller `SavedImagesController`). Migración: `scripts/migrations/0001_saved_images.sql`.
 
 11. **Avatar de usuario**: columna `Users.AvatarUrl` + `POST/GET /api/users/{id}/avatar` (el archivo se sube al mismo storage que las imágenes y se reemplaza al subir otro). Migración: `scripts/migrations/0002_user_avatar.sql`.
+
+12. **Refresh tokens**: tabla `RefreshTokens` + `POST /api/auth/refresh`. El frontend renueva la sesión automáticamente cuando el access token (120 min) expira; el refresh token (7 días) se rota en cada uso. Migración: `scripts/migrations/0003_refresh_tokens.sql`.
 
 ⏳ **Pendiente:**
 

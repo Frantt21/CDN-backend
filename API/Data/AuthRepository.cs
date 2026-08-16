@@ -35,4 +35,31 @@ public class AuthRepository
             """;
         return await connection.ExecuteScalarAsync<int>(sql, credential, transaction);
     }
+
+    public async Task<int> InsertRefreshTokenAsync(RefreshToken token)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = """
+            INSERT INTO RefreshTokens (UserId, TokenHash, ExpiresAt)
+            VALUES (@UserId, @TokenHash, @ExpiresAt);
+            SELECT CAST(SCOPE_IDENTITY() AS INT);
+            """;
+        return await connection.ExecuteScalarAsync<int>(sql, token);
+    }
+
+    public async Task<RefreshToken?> GetRefreshTokenByHashAsync(string tokenHash)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryFirstOrDefaultAsync<RefreshToken>(
+            "SELECT Id, UserId, TokenHash, ExpiresAt, CreatedAt, RevokedAt FROM RefreshTokens WHERE TokenHash = @TokenHash",
+            new { TokenHash = tokenHash });
+    }
+
+    public async Task RevokeRefreshTokenAsync(string tokenHash)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            "UPDATE RefreshTokens SET RevokedAt = SYSUTCDATETIME() WHERE TokenHash = @TokenHash",
+            new { TokenHash = tokenHash });
+    }
 }

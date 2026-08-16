@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using CDNBackend.API.Models.Entities;
 using Microsoft.IdentityModel.Tokens;
@@ -34,4 +35,12 @@ public class JwtService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    /// <summary>Genera un refresh token opaco (aleatorio) que se guarda hasheado en la base.</summary>
+    public string GenerateRefreshToken()
+        => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+    /// <summary>Hash del refresh token para almacenarlo sin guardar el token en claro.</summary>
+    public string HashRefreshToken(string token)
+        => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 }
