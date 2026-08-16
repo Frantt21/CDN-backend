@@ -143,6 +143,15 @@ public class AuthService
         return token;
     }
 
+    /// <summary>Indica si un username está disponible (regex válido y no existe en la DB, excluyendo opcionalmente al propio usuario).</summary>
+    public async Task<bool> IsUsernameAvailableAsync(string username, int? excludeId = null)
+    {
+        var normalized = username?.Trim().ToLowerInvariant() ?? string.Empty;
+        if (!UsernameRegex.IsMatch(normalized))
+            return false;
+        return !await _users.UsernameExistsAsync(normalized, excludeId);
+    }
+
     public async Task<User> UpdateProfileAsync(int userId, UpdateProfileRequest request, int currentUserId, bool isAdmin)
     {
         if (userId != currentUserId && !isAdmin)

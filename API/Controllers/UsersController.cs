@@ -28,6 +28,11 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserDto>> GetById(int id)
         => await _users.GetByIdAsync(id) is { } user ? Ok(UserDto.From(user)) : NotFound();
 
+    /// <summary>Valida en vivo si un username está disponible (para registro/edición).</summary>
+    [HttpGet("check-username")]
+    public async Task<ActionResult<UsernameAvailabilityDto>> CheckUsername([FromQuery] string username, [FromQuery] int? excludeId = null)
+        => Ok(new UsernameAvailabilityDto(await _auth.IsUsernameAvailableAsync(username, excludeId)));
+
     [HttpGet("{username}")]
     public async Task<ActionResult<UserDto>> GetByUsername(string username)
         => await _users.GetByUsernameAsync(username.ToLowerInvariant()) is { } user ? Ok(UserDto.From(user)) : NotFound();
