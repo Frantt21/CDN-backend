@@ -5,7 +5,7 @@ namespace CDNBackend.API.Data;
 
 public class SavedImagesRepository
 {
-    private const string ImageColumns = "i.Id, i.UserId, i.Name, i.Description, i.Url, i.ContentType, i.SizeBytes, i.CreatedAt";
+    private const string ImageColumns = "i.Id, i.UserId, i.Name, i.Description, i.Url, i.ThumbnailUrl, i.ContentType, i.SizeBytes, i.CreatedAt";
     private readonly Database _db;
 
     public SavedImagesRepository(Database db) => _db = db;
