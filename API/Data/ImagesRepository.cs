@@ -38,6 +38,19 @@ public class ImagesRepository
             : await connection.QueryAsync<Image>($"SELECT {Columns} FROM Images ORDER BY CreatedAt DESC");
     }
 
+    public async Task UpdateAsync(int id, string name, string? description, string? category)
+    {
+        const string sql = """
+            UPDATE Images
+            SET Name = @Name,
+                Description = @Description,
+                Category = @Category
+            WHERE Id = @Id;
+            """;
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(sql, new { Id = id, Name = name, Description = description, Category = category });
+    }
+
     public async Task SetThumbnailUrlAsync(int id, string url)
     {
         using var connection = _db.CreateConnection();

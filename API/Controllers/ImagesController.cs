@@ -66,6 +66,14 @@ public class ImagesController : ControllerBase
     }
 
     [Authorize]
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<ImageDto>> Update(int id, [FromBody] UpdateImageRequest request)
+    {
+        var image = await _images.UpdateAsync(id, request.Name, request.Description, request.Category, GetUserId(), User.IsInRole("admin"));
+        return Ok(ImageDto.From(image));
+    }
+
+    [Authorize]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

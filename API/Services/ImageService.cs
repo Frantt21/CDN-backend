@@ -176,6 +176,28 @@ public class ImageService
             _ => "application/octet-stream"
         };
 
+    /// <summary>
+    /// Edita la metadata de una imagen (nombre, descripción o categoría).
+    /// Solo el dueño o un admin. El archivo no cambia.
+    /// </summary>
+    public async Task<Image> UpdateAsync(int id, string name, string? description, string? category, int currentUserId, bool isAdmin)
+    {
+        var image = await GetByIdAsync(id);
+        if (image.UserId != currentUserId && !isAdmin)
+            throw new ApiException(403, "No tenés permisos para editar esta imagen.");
+
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ApiException(400, "El nombre no puede estar vacío.");
+
+        image.Name = name.Trim();
+        image.Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        image.Category = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
+
+        await _images.UpdateAsync(id, image.Name, image.Description, image.Category);
+        await _realtime.ImageUpdatedAsync(ImageDto.From(image));
+        return image;
+    }
+
     public async Task DeleteAsync(int id, int currentUserId, bool isAdmin)
     {
         var image = await GetByIdAsync(id);

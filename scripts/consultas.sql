@@ -163,6 +163,14 @@ UPDATE Images
 SET ThumbnailUrl = @Url
 WHERE Id = @Id;
 
+-- PUT /api/images/{id} — editar metadata (dueño o admin).
+-- Solo cambian nombre, descripción y categoría; el archivo no se toca.
+UPDATE Images
+SET Name = @Name,
+    Description = @Description,
+    Category = @Category
+WHERE Id = @Id;
+
 -- DELETE /api/images/{id} — borrar (dueño o admin; el archivo se
 -- borra del storage antes de esta consulta). También borra los
 -- guardados de esa imagen (el FK a Images es NO ACTION).

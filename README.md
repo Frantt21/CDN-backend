@@ -83,6 +83,7 @@ El log de requests en desarrollo se activa en `API/appsettings.Development.json`
 | GET | `/api/images/{id}` | — | Metadata |
 | GET | `/api/images/{id}/download` | — | Archivo original (`?download=true` para descargar) |
 | GET | `/api/images/{id}/thumbnail` | — | Versión reducida para grids (genera bajo demanda si falta) |
+| PUT | `/api/images/{id}` | JWT | Edita nombre/descripción/categoría (dueño o admin) |
 | DELETE | `/api/images/{id}` | JWT | Borra (dueño o admin) |
 | GET | `/api/saved` | JWT | Imágenes guardadas del usuario actual |
 | POST | `/api/saved/{imageId}` | JWT | Guarda una imagen (idempotente) |
@@ -98,6 +99,7 @@ El log de requests en desarrollo se activa en `API/appsettings.Development.json`
 | Evento | Payload | Cuándo |
 |---|---|---|
 | `ImageUploaded` | `ImageDto` | Se sube una imagen |
+| `ImageUpdated` | `ImageDto` | Se edita la metadata de una imagen |
 | `ImageDeleted` | `int` (id) | Se borra una imagen |
 | `UserUpdated` | `UserDto` | Se edita perfil, avatar o banner (incluye posiciones) |
 

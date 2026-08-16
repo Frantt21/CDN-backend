@@ -1,6 +1,12 @@
+using System.ComponentModel.DataAnnotations;
 using CDNBackend.API.Models.Entities;
 
 namespace CDNBackend.API.Models.Dtos;
+
+public record UpdateImageRequest(
+    [Required] string Name,
+    string? Description,
+    string? Category);
 
 public record ImageDto(
     int Id,

@@ -23,6 +23,10 @@ public class RealtimeService
     public Task ImageDeletedAsync(int imageId)
         => _hub.Clients.All.SendAsync("ImageDeleted", imageId);
 
+    /// <summary>Se editó la metadata de una imagen (nombre, descripción o categoría).</summary>
+    public Task ImageUpdatedAsync(ImageDto image)
+        => _hub.Clients.All.SendAsync("ImageUpdated", image);
+
     /// <summary>El perfil de un usuario cambió (nickname, username, descripción o avatar).</summary>
     public Task UserUpdatedAsync(UserDto user)
         => _hub.Clients.All.SendAsync("UserUpdated", user);
