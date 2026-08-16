@@ -1,5 +1,6 @@
 using System.Text;
 using CDNBackend.API.Data;
+using CDNBackend.API.Hubs;
 using CDNBackend.API.Middleware;
 using CDNBackend.API.Services;
 using CDNBackend.API.Storage;
@@ -10,6 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
+// Tiempo real (SignalR)
+builder.Services.AddSignalR();
 
 // Datos
 builder.Services.AddSingleton<Database>();
@@ -24,6 +28,7 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ImageService>();
 builder.Services.AddScoped<SavedImageService>();
+builder.Services.AddScoped<RealtimeService>();
 
 // Almacenamiento de imágenes (Local en dev, Azure CDN en producción)
 var storageProvider = builder.Configuration["Storage:Provider"];
@@ -71,5 +76,6 @@ app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<FeedHub>("/hubs/feed");
 
 app.Run();

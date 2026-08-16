@@ -20,6 +20,7 @@ public class AuthService
     private readonly JwtService _jwt;
     private readonly IImageStorage _storage;
     private readonly IConfiguration _configuration;
+    private readonly RealtimeService _realtime;
 
     public AuthService(
         Database database,
@@ -28,7 +29,8 @@ public class AuthService
         PasswordHasher hasher,
         JwtService jwt,
         IImageStorage storage,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        RealtimeService realtime)
     {
         _database = database;
         _users = users;
@@ -37,6 +39,7 @@ public class AuthService
         _jwt = jwt;
         _storage = storage;
         _configuration = configuration;
+        _realtime = realtime;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken)
@@ -168,7 +171,9 @@ public class AuthService
             throw new ApiException(409, "Ese username ya está en uso.");
 
         await _users.UpdateProfileAsync(userId, nickname, username, request.Description);
-        return await _users.GetByIdAsync(userId) ?? throw new ApiException(404, "Usuario no encontrado.");
+        var updated = await _users.GetByIdAsync(userId) ?? throw new ApiException(404, "Usuario no encontrado.");
+        await _realtime.UserUpdatedAsync(UserDto.From(updated));
+        return updated;
     }
 
     /// <summary>Sube y asigna el avatar del usuario (solo el dueño o un admin).</summary>
@@ -200,6 +205,7 @@ public class AuthService
 
         await _users.SetAvatarAsync(userId, url);
         user.AvatarUrl = url;
+        await _realtime.UserUpdatedAsync(UserDto.From(user));
         return user;
     }
 

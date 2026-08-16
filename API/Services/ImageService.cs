@@ -1,5 +1,6 @@
 using CDNBackend.API.Data;
 using CDNBackend.API.Middleware;
+using CDNBackend.API.Models.Dtos;
 using CDNBackend.API.Models.Entities;
 using CDNBackend.API.Storage;
 
@@ -10,12 +11,18 @@ public class ImageService
     private readonly ImagesRepository _images;
     private readonly IImageStorage _storage;
     private readonly IConfiguration _configuration;
+    private readonly RealtimeService _realtime;
 
-    public ImageService(ImagesRepository images, IImageStorage storage, IConfiguration configuration)
+    public ImageService(
+        ImagesRepository images,
+        IImageStorage storage,
+        IConfiguration configuration,
+        RealtimeService realtime)
     {
         _images = images;
         _storage = storage;
         _configuration = configuration;
+        _realtime = realtime;
     }
 
     public async Task<Image> UploadAsync(int userId, IFormFile file, string? name, string? description, CancellationToken cancellationToken)
@@ -47,6 +54,7 @@ public class ImageService
         };
 
         image.Id = await _images.InsertAsync(image);
+        await _realtime.ImageUploadedAsync(ImageDto.From(image));
         return image;
     }
 
@@ -66,5 +74,6 @@ public class ImageService
 
         await _storage.DeleteAsync(image.Url, CancellationToken.None);
         await _images.DeleteAsync(id);
+        await _realtime.ImageDeletedAsync(id);
     }
 }
