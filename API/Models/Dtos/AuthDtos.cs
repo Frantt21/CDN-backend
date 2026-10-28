@@ -10,8 +10,9 @@ public record RegisterRequest(
     string? Description);
 
 public record LoginRequest(
-    [Required] string Email,
-    [Required] string Password);
+    [Required] string Password,
+    string? Email = null,
+    string? Username = null);
 
 public record AuthResponse(
     int UserId,

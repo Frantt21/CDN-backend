@@ -62,4 +62,12 @@ public class AuthRepository
             "UPDATE RefreshTokens SET RevokedAt = SYSUTCDATETIME() WHERE TokenHash = @TokenHash",
             new { TokenHash = tokenHash });
     }
+
+    public async Task<UserCredential?> GetByUserIdAsync(int userId)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryFirstOrDefaultAsync<UserCredential>(
+            $"SELECT {Columns} FROM UserCredentials WHERE UserId = @UserId",
+            new { UserId = userId });
+    }
 }

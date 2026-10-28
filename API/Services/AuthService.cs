@@ -98,18 +98,38 @@ public class AuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
-        var email = request.Email?.Trim().ToLowerInvariant() ?? string.Empty;
+        var email = (request.Email ?? string.Empty).Trim();
+        var username = (request.Username ?? string.Empty).Trim();
 
-        var credential = await _auth.GetByEmailAsync(email);
+        if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(username))
+            throw new ApiException(400, "Ingresá email o username.");
+
+        var credential = await GetCredentialByLoginAsync(email, username);
         if (credential is null || !_hasher.Verify(request.Password, credential.PasswordHash))
-            throw new ApiException(401, "Email o contraseña incorrectos.");
+            throw new ApiException(401, "Email, username o contraseña incorrectos.");
 
         var user = await _users.GetByIdAsync(credential.UserId);
         if (user is null)
-            throw new ApiException(401, "Email o contraseña incorrectos.");
+            throw new ApiException(401, "Email, username o contraseña incorrectos.");
 
         return new AuthResponse(user.Id, user.Nickname, user.Username, user.Role,
             _jwt.GenerateToken(user), user.AvatarUrl, await CreateAndStoreRefreshTokenAsync(user.Id));
+    }
+
+    private async Task<UserCredential?> GetCredentialByLoginAsync(string email, string username)
+    {
+        if (!string.IsNullOrWhiteSpace(email) && email.Contains('@'))
+            return await _auth.GetByEmailAsync(email.ToLowerInvariant());
+
+        if (!string.IsNullOrWhiteSpace(username))
+        {
+            var user = await _users.GetByUsernameAsync(username.ToLowerInvariant());
+            if (user is null) return null;
+
+            return await _auth.GetByUserIdAsync(user.Id);
+        }
+
+        return null;
     }
 
     /// <summary>Renueva la sesión: valida el refresh token, lo rota y emite un access token nuevo.</summary>
