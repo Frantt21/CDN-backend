@@ -25,3 +25,4 @@ appsettings.*.local.json
 *.log
 logs/
 /API/wwwroot/uploads
+/.github
